@@ -35,7 +35,7 @@ import (
 var registerCmd = &cobra.Command{
 	Use:   "register",
 	Short: "registers DEX client",
-	Long: `Registers dex client fot openID purposes`,
+	Long:  `Registers dex client fot openID purposes`,
 	Run: func(cmd *cobra.Command, args []string) {
 		registerDexClient()
 	},
@@ -100,7 +100,7 @@ func newDexClient(hostAndPort string) (api.DexClient, error) {
 		})
 	} else {
 		transportCreds = credentials.NewTLS(&tls.Config{
-			RootCAs:      serverCertPool,
+			RootCAs: serverCertPool,
 		})
 	}
 
@@ -126,7 +126,22 @@ func registerDexClient() {
 		},
 	}
 
-	if _, err := client.CreateClient(context.TODO(), req); err != nil {
+	createClientResponse, err := client.CreateClient(context.TODO(), req)
+	if err != nil {
 		log.Fatalf("failed creating oauth2 client: %v", err)
+	}
+
+	if !createClientResponse.AlreadyExists {
+		return
+	}
+
+	updateReq := &api.UpdateClientReq{
+		Id:           req.Client.Id,
+		Name:         req.Client.Name,
+		RedirectUris: req.Client.RedirectUris,
+	}
+
+	if _, err := client.UpdateClient(context.TODO(), updateReq); err != nil {
+		log.Fatalf("failed updating oauth2 client %v", err)
 	}
 }
