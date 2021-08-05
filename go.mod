@@ -1,4 +1,4 @@
-module github.com/javamachr/dexregistrar
+module github.com/ysoftdevs/dexregistrar
 
 go 1.16
 

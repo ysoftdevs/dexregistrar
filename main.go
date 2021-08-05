@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/javamachr/dexregistrar/cmd"
+import "github.com/ysoftdevs/dexregistrar/cmd"
 
 func main() {
 	cmd.Execute()
