@@ -35,9 +35,18 @@ import (
 var registerCmd = &cobra.Command{
 	Use:   "register",
 	Short: "registers DEX client",
-	Long:  `Registers dex client fot openID purposes`,
+	Long:  `Registers dex client for openID purposes`,
 	Run: func(cmd *cobra.Command, args []string) {
 		registerDexClient()
+	},
+}
+
+var deleteCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "deletes DEX client",
+	Long:  `Deletes dex client for openID purposes`,
+	Run: func(cmd *cobra.Command, args []string) {
+		deleteDexClient()
 	},
 }
 
@@ -52,21 +61,22 @@ var redirectUris []string
 
 func init() {
 	rootCmd.AddCommand(registerCmd)
+	rootCmd.AddCommand(deleteCmd)
+
+	rootCmd.PersistentFlags().StringVarP(&host, "address", "a", "localhost", "Hostname address to connect to")
+	_ = rootCmd.MarkFlagRequired("address")
+	rootCmd.PersistentFlags().IntVarP(&port, "port", "p", 5557, "Host port to connect to")
+	_ = rootCmd.MarkFlagRequired("port")
+	rootCmd.PersistentFlags().StringVarP(&caPath, "cacertpath", "t", "/etc/dex/ca.crt", "Path to client CA cert to connect to")
+	_ = rootCmd.MarkFlagRequired("cacertpath")
+	rootCmd.PersistentFlags().StringVarP(&clientCert, "clientCert", "e", "", "Path to client cert for mTLS")
+	rootCmd.PersistentFlags().StringVarP(&clientKey, "clientKey", "k", "", "Path to client key for mTLS")
+	rootCmd.PersistentFlags().StringVarP(&clientId, "clientid", "c", "", "ClientID to register")
+	_ = registerCmd.MarkFlagRequired("clientid")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// registerCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	registerCmd.Flags().StringVarP(&host, "address", "a", "localhost", "Hostname address to connect to")
-	_ = registerCmd.MarkFlagRequired("address")
-	registerCmd.Flags().IntVarP(&port, "port", "p", 5557, "Host port to connect to")
-	_ = registerCmd.MarkFlagRequired("port")
-	registerCmd.Flags().StringVarP(&caPath, "cacertpath", "t", "/etc/dex/ca.crt", "Path to client CA cert to connect to")
-	_ = registerCmd.MarkFlagRequired("cacertpath")
-	registerCmd.Flags().StringVarP(&clientCert, "clientCert", "e", "", "Path to client cert for mTLS")
-	registerCmd.Flags().StringVarP(&clientKey, "clientKey", "k", "", "Path to client key for mTLS")
-
-	registerCmd.Flags().StringVarP(&clientId, "clientid", "c", "", "ClientID to register")
-	_ = registerCmd.MarkFlagRequired("clientid")
 	registerCmd.Flags().StringVarP(&clientSecret, "clientsecret", "s", "", "ClientSecret to register")
 	_ = registerCmd.MarkFlagRequired("clientsecret")
 	registerCmd.Flags().StringArrayVarP(&redirectUris, "redirecturis", "r", nil, "RedirectURIs to register")
@@ -143,5 +153,20 @@ func registerDexClient() {
 
 	if _, err := client.UpdateClient(context.TODO(), updateReq); err != nil {
 		log.Fatalf("failed updating oauth2 client %v", err)
+	}
+}
+
+func deleteDexClient() {
+	client, err := newDexClient(strings.Join([]string{host, strconv.Itoa(port)}, ":"))
+	if err != nil {
+		log.Fatalf("failed creating dex client: %v ", err)
+	}
+
+	req := &api.DeleteClientReq{
+		Id: clientId,
+	}
+
+	if _, err := client.DeleteClient(context.TODO(), req); err != nil {
+		log.Fatalf("failed deleting dex client: %v ", err)
 	}
 }
